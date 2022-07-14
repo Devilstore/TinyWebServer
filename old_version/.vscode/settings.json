@@ -1,0 +1,18 @@
+{
+  "files.associations": {
+    "*.txt": "plaintext",
+    "*.m": "matlab",
+    "*.tcc": "cpp",
+    "fstream": "cpp",
+    "iosfwd": "cpp",
+    "istream": "cpp",
+    "limits": "cpp",
+    "sstream": "cpp",
+    "streambuf": "cpp",
+    "type_traits": "cpp",
+    "exception": "cpp",
+    "new": "cpp",
+    "ostream": "cpp",
+    "typeinfo": "cpp"
+  }
+}
