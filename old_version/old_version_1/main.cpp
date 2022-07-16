@@ -18,7 +18,6 @@
 
 #define MAX_FD 10000           // 最大文件描述符个数
 #define MAX_EVENT_NUMBER 10000 // epoll最大监听文件描述符数量
-#define TIMESLOTS 5            // ALARM 信号 产生间隔
 
 // 向 epfd 添加需要监听的 fd
 extern void addfd(int epfd, int fd, bool one_shot);
@@ -26,8 +25,6 @@ extern void addfd(int epfd, int fd, bool one_shot);
 extern void removefd(int epfd, int fd);
 // 设置 fd 非阻塞
 extern int setnonblocking(int fd);
-
-extern void back_func(http_conn *user_data);
 
 // 添加sig信号捕捉。  param ： sig  函数指针 handler
 void addsig(int sig, void(handler)(int))
@@ -39,31 +36,6 @@ void addsig(int sig, void(handler)(int))
     sa.sa_flags = 0;
     sigfillset(&sa.sa_mask);                 // 添加临时信号阻塞集。信号捕捉完成之后 就不在阻塞
     assert(sigaction(sig, &sa, NULL) != -1); // 注册信号捕捉
-}
-
-// ALARM 信号处理函数。 将 alarm 信号 转化为 char* 发送到pipefd[1] （管道写端）
-void alarm_handler(int sig)
-{
-    // printf("alarm_handler\n");
-    int save_errno = errno;
-    int msg = sig;
-    int ret = send(http_conn::pipefd[1], (char *)&msg, 1, 0);
-    // printf("发送信号...%d...%d\n", ret, msg);
-    errno = save_errno;
-}
-
-// 定时标记 处理函数
-void timer_hander()
-{
-    // printf("timer_handler\n");
-    if (http_conn::timer_lst)
-    {
-        // printf("定时处理函数\n");
-        // 定时处理任务，实际上就是调用tick()函数
-        http_conn::timer_lst->tick();
-    }
-    // 因为一次 alarm 调用只会引起一次SIGALARM 信号，所以我们要重新定时
-    alarm(TIMESLOTS);
 }
 
 // 从epfd中 修改 fd. (重置socket 的 oneshot
@@ -85,15 +57,8 @@ int main(int argc, char *argv[])
 
     int ret = 0;
 
-    // 创建管道
-    ret = socketpair(AF_UNIX, SOCK_STREAM, 0, http_conn::pipefd);
-    assert(ret != -1);
-    setnonblocking(http_conn::pipefd[1]); // 设置写管道非阻塞
-    setnonblocking(http_conn::pipefd[0]); // 设置读管道非阻塞
-
     // 对信号进行处理
-    addsig(SIGPIPE, SIG_IGN);       // 捕捉到 SIGPIPE 信号，进行忽略处理
-    addsig(SIGALRM, alarm_handler); // 捕捉SIGALRM信号，进行处理
+    addsig(SIGPIPE, SIG_IGN); // 捕捉到 SIGPIPE 信号，进行忽略处理
 
     // 创建监听socket
     int listenfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -127,10 +92,6 @@ int main(int argc, char *argv[])
 
     // 将 监听fd 添加到 epfd
     addfd(epfd, listenfd, false); // false 表示 不开启oneshot，会持续通知
-    // 将 管道fd 添加到 epfd
-    addfd(epfd, http_conn::pipefd[0], false);
-
-    // printf("epfd:%d, pipefd:%d %d\n", epfd, http_conn::pipefd[0], http_conn::pipefd[1]);
 
     // 创建线程池，并进行初始化   类似STL模板类
     threadpool<http_conn> *pool = NULL; // http_connect 为任务类
@@ -144,8 +105,6 @@ int main(int argc, char *argv[])
     }
 
     bool stop_server = false;
-    bool timeout = false; // 标记当前 是否存在定时信号
-    alarm(TIMESLOTS);
 
     // 循环检测 epoll 事件
     while (!stop_server)
@@ -185,64 +144,19 @@ int main(int argc, char *argv[])
                 }
 
                 // 当前客户端 ip
-                char ip[16] = {0};
-                inet_ntop(AF_INET, &client_address.sin_addr.s_addr, ip, sizeof(ip));
-                unsigned short ppport = ntohs(client_address.sin_port);
-                printf("当前客户端ip:%s,端口：%d\n", ip, ppport);
+                char cip[16] = {0};
+                inet_ntop(AF_INET, &client_address.sin_addr.s_addr, cip, sizeof(cip));
+                unsigned short cport = ntohs(client_address.sin_port);
+                printf("当前客户端ip:%s,端口：%d\n", ip, cport);
+
                 // 将新的客户连接进行初始化，并放入用户数据信息
                 users[connfd].init(connfd, client_address);
-                // 创建新 http 定时器
-                users[connfd].setTimer(users + connfd, back_func, TIMESLOTS);
-                printf("分配的通信fd:%d\n", connfd);
-                ulist_timer *p = http_conn::timer_lst->head;
-                while (p)
-                {
-                    printf("到期时间：%ld\n", p->expire);
-                    p = p->next;
-                }
-                printf("------------------\n");
-            }
-            else if (sockfd == http_conn::pipefd[0] && (events[i].events & EPOLLIN))
-            {
-                // 处理信号
-                int sig;
-                char signals[1024];
-                ret = recv(sockfd, signals, sizeof(signals), 0);
-                if (ret == -1)
-                {
-                    continue;
-                }
-                else if (ret == 0)
-                {
-                    continue;
-                }
-                else if (ret > 0)
-                {
-                    // 接收到信号 进行逻辑处理
-                    for (int i = 0; i < ret; ++i)
-                    {
-                        switch (signals[i])
-                        {
-                        case SIGALRM:
-                        {
-                            timeout = true;
-                            break;
-                        }
-                        case SIGTERM:
-                        {
-                            stop_server = true;
-                            break;
-                        }
-                        }
-                    }
-                }
             }
             else if (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
             {
                 // 异常事件  对方异常断开 或者 错误等时间:EPOLLRDHUP|EPOLLHUP|EPOLLERR
                 // 回调函数 包括 删除epoll注册事件移除链接节点和关闭相应连接
-                users[sockfd].m_timer->func(users + sockfd); //
-                // users[sockfd].close_conn(); // 销毁http任务
+                users[sockfd].close_conn(); // 销毁http任务
             }
             else if (events[i].events & EPOLLIN)
             { // 除了 监听fd 和 pipefd[0] 其他的读事件
@@ -251,21 +165,10 @@ int main(int argc, char *argv[])
                 {
                     // 读事件 处理完毕， 加入线程请求任务队列
                     pool->append(users + sockfd); // users + sockfd 为数组首地址 + 偏移量
-                    // 更新当前 http 任务的定时器
-                    if (users[sockfd].m_timer)
-                    {
-                        time_t cur = time(NULL);
-                        users[sockfd].m_timer->expire = cur + 3 * TIMESLOTS;
-                        char ip[16];
-                        users[sockfd].getClientIp(ip);
-                        printf("客户端：%s的到期时间已调整。\n", ip);
-                        http_conn::timer_lst->update_timer(users[sockfd].m_timer);
-                    }
                 }
                 else
                 {
-                    users[sockfd].m_timer->func(users + sockfd);
-                    // users[sockfd].close_conn(); // 读事件处理失败，关闭 用户请求任务
+                    users[sockfd].close_conn(); // 读事件处理失败，关闭 用户请求任务
                 }
             }
             else if (events[i].events & EPOLLOUT)
@@ -273,17 +176,9 @@ int main(int argc, char *argv[])
                 // 写数据就绪。not keep-alive，wirte返回false，关闭连接
                 if (users[sockfd].write() == false)
                 {
-                    users[sockfd].m_timer->func(users + sockfd);
-                    // users[sockfd].close_conn(); // 写事件处理失败，关闭 用户请求任务
+                    users[sockfd].close_conn(); // 写事件处理失败，关闭 用户请求任务
                 }
             }
-        }
-        // 如果存在 信号标记则处理定时时间。先执行I/O事件
-        if (timeout)
-        {
-            // printf("处理...");
-            timer_hander();
-            timeout = false;
         }
     }
 

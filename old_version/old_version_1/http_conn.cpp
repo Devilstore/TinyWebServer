@@ -17,8 +17,6 @@ const char *doc_root = "/home/devil/linux/web1/src";
 // 类静态变量成员 初始化
 int http_conn::m_epfd = -1;     // 所有socket事件都被注册到同一个epoll对象中
 int http_conn::m_user_size = 0; // 统计当前用户数量
-int *http_conn::pipefd = new int[2];
-timer_list *http_conn::timer_lst = new timer_list();
 
 // 为fd设置非阻塞属性
 int setnonblocking(int fd)
@@ -63,18 +61,6 @@ void modifyfd(int epfd, int fd, int ev)
     epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &event);              // 修改 fd epoll属性
 }
 
-// 定时回调函数 信号调用处理函数
-// 移除 epoll 注册事件，在 链表中 移除该节点，关闭http连接
-void back_func(http_conn *user_data)
-{
-    // 移除 epoll 注册事件
-    removefd(user_data->m_epfd, user_data->m_sockfd);
-    // 在 链表中 移除该节点
-    http_conn::timer_lst->del_timer(user_data->m_timer);
-    // 关闭http连接
-    user_data->close_conn();
-}
-
 // 关闭通信连接
 void http_conn::close_conn()
 {
@@ -85,13 +71,6 @@ void http_conn::close_conn()
         m_sockfd = -1;              // 重置 fd 为-1
         --m_user_size;              // 总用户数量 - 1
     }
-
-    // 关闭定时器链接
-    if (m_timer)
-    {
-        delete m_timer;
-        m_timer = nullptr;
-    }
 }
 
 // 初始化新接收的 用户连接任务请求。（将用户连接信息都封装在 http 任务类内）
@@ -99,7 +78,6 @@ void http_conn::init(int sockfd, const sockaddr_in &addr)
 {
     m_sockfd = sockfd;
     m_addr = addr;
-    // m_timer = new ulist_timer();
 
     // 设置 通信 socket 端口复用，1 表示端口复用
     int reuse = 1;
@@ -628,11 +606,12 @@ bool http_conn::process_write(HTTP_CODE read_ret)
     default:
         return false;
     }
-    // m_iv[0].iov_base = m_write_buf;
-    // m_iv[0].iov_len = m_write_index;
-    // m_iv_count = 1;
-    // bytes_to_send = m_write_index;
-    // return true;
+    // 其他情况
+    m_iv[0].iov_base = m_write_buf;
+    m_iv[0].iov_len = m_write_index;
+    m_iv_count = 1;
+    bytes_to_send = m_write_index;
+    return true;
 }
 
 // 工作函数 : 处理客户端请求入口函数，由线程池中的工作线程调用。
@@ -655,37 +634,4 @@ void http_conn::process()
         close_conn();
     }
     modifyfd(m_epfd, m_sockfd, EPOLLOUT); // 生成响应完毕，写入 epoll 对象，通知 EPOLLOUT
-}
-
-// 获取当前 http 连接源 IP
-void http_conn::getClientIp(char *ip)
-{
-    inet_ntop(AF_INET, &m_addr.sin_addr.s_addr, ip, 16);
-}
-
-// 设置当前 http 任务定时器
-void http_conn::setTimer(http_conn *user, void(func)(http_conn *), time_t slot)
-{
-    bool flag = false;
-    if (m_timer == NULL)
-    {
-        flag = true;
-        m_timer = new ulist_timer();
-    }
-    m_timer->user_data = user;
-    m_timer->func = back_func;
-    time_t cur = time(NULL);
-    printf("当前时间：%ld\n", cur);
-    m_timer->expire = cur + 3 * slot;
-    if (flag)
-    {
-        printf("调用添加\n");
-        http_conn::timer_lst->add_timer(m_timer);
-    }
-    else
-    {
-        printf("调用修改\n");
-        http_conn::timer_lst->update_timer(m_timer);
-    }
-    printf("当前客户端到期时间：%ld\n", m_timer->expire);
 }
