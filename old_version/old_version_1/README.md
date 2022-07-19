@@ -1,7 +1,5 @@
 # TinyWebServer简介
 
-## 
-
 本项目仅用于个人练习，基础版本。
 
 ### Linux下C++轻量级Web服务器
