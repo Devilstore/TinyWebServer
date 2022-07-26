@@ -21,10 +21,6 @@
 
 #include <time.h>
 
-class ulist_timer;
-class timer_list;
-class http_conn;
-
 // http 连接请求 任务类
 class http_conn
 {
@@ -131,7 +127,6 @@ private:
     bool add_blank_line();                               // 添加响应头部信息 : 空行
     bool add_content(const char *content);               // 添加响应体内容
     void unmap();                                        // 释放 目标资源文件内存映射
-
 
 private:
     // 分配的资源
