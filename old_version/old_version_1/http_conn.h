@@ -19,8 +19,6 @@
 #include <string.h>
 #include "locker.h"
 
-#include <time.h>
-
 // http 连接请求 任务类
 class http_conn
 {
