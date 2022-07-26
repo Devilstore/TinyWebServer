@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
                 char cip[16] = {0};
                 inet_ntop(AF_INET, &client_address.sin_addr.s_addr, cip, sizeof(cip));
                 unsigned short cport = ntohs(client_address.sin_port);
-                printf("当前客户端ip:%s,端口：%d\n", ip, cport);
+                printf("当前客户端ip:%s,端口：%d\n", cip, cport);
 
                 // 将新的客户连接进行初始化，并放入用户数据信息
                 users[connfd].init(connfd, client_address);

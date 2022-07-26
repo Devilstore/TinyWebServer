@@ -12,7 +12,7 @@ const char *error_500_title = "Internal Error";
 const char *error_500_form = "There was an unusual problem serving the requested file.\n";
 
 // 网站根目录
-const char *doc_root = "/home/devil/linux/web1/src";
+const char *doc_root = "/home/devil/linux/TinyWebServer/old_version/old_version_1/src";
 
 // 类静态变量成员 初始化
 int http_conn::m_epfd = -1;     // 所有socket事件都被注册到同一个epoll对象中

@@ -1,18 +1,14 @@
-# TinyWebServer简介
+# TinyWebServer 简介
 
 本项目仅用于个人练习，基础版本。
 
-### Linux下C/C++轻量级Web服务器
+### Linux 下 C/C++轻量级 Web 服务器
 
-- 使用 `线程池` + `非阻塞socket`  + `epoll` + `事件处理（模拟Proactor）` 的并发模型
-- 使用 `有限状态机` 解析HTTP请求报文，目前仅支持 **GET** 请求
-- 经过  `Webbench` 压力测试可以实现上万的并发请求
-
-
+- 使用 `线程池` + `非阻塞socket` + `epoll` + `事件处理（模拟Proactor）` 的并发模型
+- 使用 `有限状态机` 解析 HTTP 请求报文，目前仅支持 **GET** 请求
+- 经过 `Webbench` 压力测试可以实现上万的并发请求
 
 #### 操作系统： Linux
-
-
 
 #### 运行
 
@@ -25,16 +21,19 @@
    $ cd TinyWebServer/old_version/old_version_1
    ```
 
-2. 构建并运行 
+2. 构建并运行 (需要安装 make.)
+
+   Linux 下安装 make `sudo apt install make`
 
    ```
-   $ g++ *.cpp -pthread
-   $ ./a.out port
+   $ make
+   $ make run
    ```
 
-   注意：需要修改http_conn.cpp 文件的 `doc_root` 为本地 `src` 目录
+   注意：
 
-
+   - 需要修改 http_conn.cpp 文件的 `doc_root` 为本地 `src` 目录
+   - make run 默认端口设置 6379, 可自行使用 ./test prot 运行
 
 #### Webbench 压力测试
 
@@ -47,8 +46,6 @@ $ ./webbench -c 10000 -t 5 http://192.168.31.73:6379/index.html
 ```
 
 其中 `-c` 为客户端数量，`-t`为运行时间， 后面为 访问地址。
-
-
 
 测试结果如下：
 
