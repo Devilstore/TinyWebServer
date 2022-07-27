@@ -26,8 +26,7 @@ run :
 clean:
 	@$(RM) $(OBJS)
 
-
-# makefile 一些参数
+# makefile 部分 语法
 
 # AR ：归档维护程序的名称，默认值为ar
 # CC ：C编译器的名称，默认值为C
