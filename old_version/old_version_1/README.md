@@ -33,7 +33,7 @@
    注意：
 
    - 需要修改 http_conn.cpp 文件的 `doc_root` 为本地 `src` 目录
-   - make run 默认端口设置 6379, 可自行使用 `./test prot`运行 (port：自定义的端口号)
+   - make run 默认端口设置 6379, 可自行使用 `./test port`运行 (port：自定义的端口号)
 
 #### Webbench 压力测试
 
