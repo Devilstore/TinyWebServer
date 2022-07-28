@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
     addfd(epfd, http_conn::pipefd[0], false);
 
     // setnonblocking(http_conn::pipefd[0]);
-    // setnonblocking(http_conn::pipefd[1]);
+    setnonblocking(http_conn::pipefd[1]); // 设置写端非阻塞
 
     // 创建线程池，并进行初始化   类似STL模板类
     threadpool<http_conn> *pool = NULL; // http_connect 为任务类
