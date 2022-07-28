@@ -75,8 +75,8 @@ extern void modifyfd(int epfd, int fd, int ev);
 int main(int argc, char *argv[])
 {
     // 初始化日志记录
-    Log::getInstance()->init(".ServerLog", 0, 8192, 500000, 0); // 同步测试
-    // Log::getInstance()->init(".ServerLog", 0, 8192, 500000, 800); // 异步测试
+    // Log::getInstance()->init(".ServerLog", 0, 8192, 500000, 0); // 同步测试
+    Log::getInstance()->init(".ServerLog", 0, 8192, 500000, 800); // 异步测试
 
     // 参数错误，输出提示。
     if (argc <= 1)
