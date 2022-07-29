@@ -74,8 +74,6 @@ $ ./webbench -c 10000 -t 5 http://192.168.31.73:6379/index.html
 
 ![image-20220728180350393](https://devil-picture-bed.oss-cn-shenzhen.aliyuncs.com/image/202207281803168.png)
 
-
-
 - 异步写日志
 
 ![image-20220728180619969](https://devil-picture-bed.oss-cn-shenzhen.aliyuncs.com/image/202207281806003.png)
