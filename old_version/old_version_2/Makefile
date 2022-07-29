@@ -4,10 +4,16 @@ TARGET := test
 OBJS = main.o locker.o http_conn.o log.o
 GCC = g++
 CFLAGS = -w -pthread
-TARGET := test
+TARGET := ./bin/webserver
+
+OBJDIR := ./bin
 
 
-all : test clean
+all : $(OBJDIR) $(TARGET) clean
+
+$(OBJDIR):
+	@mkdir -p $(OBJDIR)
+
 
 $(TARGET):$(OBJS)
 	@$(GCC) $^ $(CFLAGS) -o $@
@@ -19,7 +25,7 @@ $(TARGET):$(OBJS)
 run :
 	@echo "Default prot : 6379. \n"
 	@echo [please input "http:your ip:6379/index.html" to access the website.]"\n"
-	@./test 6379
+	@$(TARGET) 6379
 
 .PHONY : clean
 clean:
