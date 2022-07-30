@@ -35,36 +35,30 @@
 
 依照如下步骤可以进行编译运行：
 
-1. 克隆仓库(如果不可以，直接下载Zip进行解压也一样。)
+1. 克隆仓库(如果不可以，直接下载 Zip 进行解压也一样。)
 
    ```
    $ git clone git@github.com:Devilstore/TinyWebServer.git
    $ cd TinyWebServer/old_version/old_version_2
    ```
 
-   
-
-2. 构建并运行 (需要安装 make)        ----Linux 下安装 make `sudo apt install make`
+2. 构建并运行 (需要安装 make) ----Linux 下安装 make `sudo apt install make`
 
    ```
    $ make
    $ make run
    ```
-   
+
    或者使用下面的命令运行：
 
    ```
    $ sh server_start.sh
    ```
-   
-   
-   
+
    注意：
-   
+
    - 需要修改 http_conn.cpp 文件的 `doc_root` 为本地 `src` 目录
-   - make run 默认端口设置 6379, 可自行使用 `./webserver port`运行 (port：自定义的端口号)， 或者修改 server_start.sh 中的  最后一行 6379 端口号
-   
-   
+   - make run 默认端口设置 6379, 可自行使用 `./webserver port`运行 (port：自定义的端口号)， 或者修改 server_start.sh 中的 最后一行 6379 端口号
 
 #### Webbench 压力测试
 
